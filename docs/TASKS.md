@@ -1,12 +1,3 @@
-# Active Tasks
-
-> **Legend**
-> - [ ] To Do
-> - [/] In Progress
-> - [x] Done
-
-## Current Priority
-
 ### Core Architecture & Data Models
 - [ ] Create `Place` Statamic Blueprint base (`places/place.yaml`).
   - Fields needed: Name, Latitude, Longitude, Radius, OSM ID, OSM Type (node/way/relation).
@@ -17,11 +8,36 @@
   - Feature: Fallback creation (custom location/zoom out).
   - Feature: "Save to Collection" dropdown to route the new Place entry to the correct collection.
 
-### ActivityPub Federation & Injection
+# Tasks for ActivityPubPlaces
+
+## 1. Core Dependencies (ActivityPubCore)
+- [ ] Refactor Settings page architecture to allow Addons/Plugins to register top-level Tabs (Settings Tab Extensibility).
+
+## 2. Infrastructure & Data
+- [ ] Create `Place` ActivityPubType registration logic (similar to Note/Article).
+- [ ] Define Place Collection blueprint and schema (must handle OSM references, coords, bounding boxes).
+- [ ] Configure `places.pub/(node|way|relation)/ID` translation mapping.
+
+## 3. Control Panel Experience
+- [ ] Add "Places" child nav item under ActivityPub in CP sidebar.
+- [ ] Build Places Listing dashboard.
+- [ ] Add "Places" settings tab to ActivityPub Settings page.
+- [ ] Implement "New Check-in" vs "New Place" UI flows/buttons.
+- [ ] Build custom OSM Location Search Fieldtype.
+
+## 4. Activities & Routing
+- [ ] Generate `Arrive` activity for check-ins if specifically requested/enabled.
+- [ ] Implement "Check-in" logic: Auto-generate the corresponding Mastodon-compatible `Note` alongside the place when triggered.
+- [ ] Implement "New Place" logic: Silent save.
 - [ ] Extend Activity dispatcher to support the `Arrive` activity for "Check-ins" (generate only on initial creation alongside `Create`, skip on edits/deletes).
 - [ ] Listen to Event updates on posts/articles and append `location` property for outbound AP JSON (with `places.pub` reference).
 - [ ] Extend `Actor` profile JSON to include a `places` property linking to a paginated `OrderedCollection`.
 - [ ] Create HTTP Endpoint to serve the Actor's paginated `Places` collection based on recency and opt-in/visibility rules.
+
+## 5. Web Views & Frontend
+- [ ] Create default Antlers templates for Places.
+- [ ] Map internal notes to Places for display.
+- [ ] Ensure overriding capability in Statamic theme structure.
 
 ### Testing & Validation (ProvidesSandbox)
 - [ ] Write Unit tests for configurable Places collections and routing.

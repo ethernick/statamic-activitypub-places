@@ -31,6 +31,13 @@ The `ActivityPubPlaces` addon for Statamic introduces spatial, geographical cont
 2. **Authoring UX (Fieldtype/UI)**: A custom backend component that searches OSM. Because there can be multiple collections, the UI must include a "Save place to Collection..." dropdown.
 3. **Actor Federation Layer**: A paginated endpoint on the Actor Profile that curates places. This is *not* an auto-add of all places; it requires an explicit opt-in or routing rule so private places aren't leaked.
 4. **Check-in (`Arrive`) Activity**: In addition to standard Creates/Updates, the addon will support dispatching an `Arrive` activity pointing to the Place, acting as the fediverse-standard "Check-in".
+5. **Control Panel Navigation**: A new "Places" child item in the CP sidebar under "ActivityPub" (beside Inbox/Questions), designed to list and organize places, show profile visibility, and provide quick links to open locations in OSM/Google Maps. The UI will provide options for "New Check-In" and "New Place".
+6. **Extensible Settings & Mastodon Compatibility**: 
+   - Connect with Core refactor to register a "Places" tab in the ActivityPub Settings page.
+   - **Mastodon Compatibility (Check-in vs Place)**: Instead of an automated checkbox on all places, the UI provides two distinct creation paths: 
+     - **New Check-in**: Saves the Place and instantly generates a standard, Mastodon-compatible `Note` activity attached to it.
+     - **New Place**: Saves the Place quietly (no `Note` generated) for future use or silent curation.
+7. **Web Views**: Ship default frontend Antlers views/templates that define how a Place looks on the web. Statamic developers can easily override these views in their own site's theme if they want a custom design.
 
 ## 6. Requirements
 
@@ -42,6 +49,10 @@ The `ActivityPubPlaces` addon for Statamic introduces spatial, geographical cont
 - **Paginated Actor Profile Extension**: Inject a `places` property pointing to an ActivityPub Collection endpoint, strictly paginated by recency, with logic to filter out non-public/non-federated Place collections.
 
 ### Should Have (P1)
+- **Extend Settings for Plugins (Dependency)**: Refactor ActivityPubCore to allow addons to inject tabs into the Settings page.
+- **Places Settings Tab**: Include a customizable template/format to generate the Mastodon-compatible `Note` text used during "Check-ins".
+- **Dedicated CP "Places" Section**: Child nav item in the CP sidebar (under ActivityPub) to list/organize places, provide external map links, and trigger "New Check-in" or "New Place" workflows.
+- **Frontend Overridable Templates (Web)**: Ship default Antlers views that display Places and related notes, ensuring they adhere to Statamic's standard fallback/override system for developers.
 - **Fuzzy/Fallback Locations**: When OSM fails or users want privacy, allow defining custom radius and dropping precise coordinates ("zoom out").
 
 ### Nice to Have (P2)
@@ -55,6 +66,3 @@ The `ActivityPubPlaces` addon for Statamic introduces spatial, geographical cont
 
 ## 8. Resolved Questions
 - **How is a Check-in (`Arrive`) structured?** It is not a distinct Entry Type. It is stored in the Activities collection with the "Arrive" action. Upon initial creation of an entry (Note/Article) with a location, two activities are generated in the outbox: `Create` and `Arrive`. `Arrive` is never regenerated on subsequent edits.
-
-## 9. Work Log / Session History
-*Consult `docs/session/` for detailed logs of specific development sessions.*
