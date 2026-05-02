@@ -1,0 +1,29 @@
+{
+  "name": "@ethernick/statamic-activitypub-places",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build:v5:js": "cross-env BUILD_ADDON=true VUE_VERSION=2 BUILD_TYPE=js vite build",
+    "build:v5:css": "cross-env BUILD_ADDON=true VUE_VERSION=2 BUILD_TYPE=css vite build",
+    "build:v5": "npm run build:v5:js && npm run build:v5:css",
+    "build:v6": "./bin/build-v6.sh",
+    "build": "npm run build:v6 && npm run build:v5",
+    "production": "npm run build",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "^2.3.4",
+    "@vue/test-utils": "^1.3.6",
+    "cross-env": "^7.0.3",
+    "flush-promises": "^1.0.2",
+    "jsdom": "^24.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^1.6.0",
+    "vue-template-compiler": "^2.7.16"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "vue": "^2.7.16"
+  }
+}

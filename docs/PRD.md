@@ -1,7 +1,7 @@
 # Product Requirements Document: ActivityPubPlaces
 
 **Document Owner**: ethernick
-**Status**: Discovery / Drafting
+**Status**: Active Development
 
 ---
 
@@ -35,9 +35,10 @@ The `ActivityPubPlaces` addon for Statamic introduces spatial, geographical cont
 6. **Extensible Settings & Mastodon Compatibility**: 
    - Connect with Core refactor to register a "Places" tab in the ActivityPub Settings page.
    - **Mastodon Compatibility (Check-in vs Place)**: Instead of an automated checkbox on all places, the UI provides two distinct creation paths: 
-     - **New Check-in**: Saves the Place and instantly generates a standard, Mastodon-compatible `Note` activity attached to it.
+     - **New Check-in**: Saves the Place and instantly generates a standard, Mastodon-compatible `Note` activity with an OpenStreetMap deep-link footer.
      - **New Place**: Saves the Place quietly (no `Note` generated) for future use or silent curation.
-7. **Web Views**: Ship default frontend Antlers views/templates that define how a Place looks on the web. Statamic developers can easily override these views in their own site's theme if they want a custom design.
+7. **Interactive Inbox Experience**: Automatically renders a live Leaflet map with full pan/zoom capabilities in the inbox stream for any note containing geographical data.
+8. **Web Views**: Ship default frontend Antlers views/templates that define how a Place looks on the web. Statamic developers can easily override these views in their own site's theme if they want a custom design.
 
 ## 6. Requirements
 

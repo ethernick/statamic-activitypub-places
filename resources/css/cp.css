@@ -1,0 +1,32 @@
+/* ActivityPub Places CP styles */
+@import 'leaflet/dist/leaflet.css';
+
+/* Fix Leaflet map visibility issues in flex containers */
+.leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+    min-height: 200px;
+}
+
+.h-350, .h-350.leaflet-container {
+    height: 350px !important;
+}
+
+/* Ensure Leaflet tiles show correctly in Statamic CP */
+.leaflet-pane {
+    z-index: 1 !important;
+}
+
+.leaflet-top, .leaflet-bottom {
+    z-index: 5 !important;
+}
+
+/* Transitions for drawers */
+.slide-in-from-right {
+    animation: slide-in-right 0.3s ease-out;
+}
+
+@keyframes slide-in-right {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}

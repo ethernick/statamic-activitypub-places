@@ -1,0 +1,23 @@
+{
+    "name": "ethernick/statamic-activitypub-places",
+    "description": "ActivityPub Places and Geographic Context for Statamic",
+    "autoload": {
+        "psr-4": {
+            "Ethernick\\ActivityPubPlaces\\": "src/"
+        }
+    },
+    "require": {
+        "ethernick/statamic-activitypub-core": "*"
+    },
+    "extra": {
+        "statamic": {
+            "name": "ActivityPub Places",
+            "description": "ActivityPub Places and Check-ins"
+        },
+        "laravel": {
+            "providers": [
+                "Ethernick\\ActivityPubPlaces\\ActivityPubPlacesServiceProvider"
+            ]
+        }
+    }
+}

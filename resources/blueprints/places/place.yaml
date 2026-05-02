@@ -1,0 +1,73 @@
+title: Place
+sections:
+  main:
+    display: Main
+    fields:
+      -
+        handle: title
+        field:
+          type: text
+          display: Title
+          validate: 'required'
+      -
+        handle: osm_name
+        field:
+          type: text
+          display: 'OSM Name'
+          instructions: 'The public name retrieved from OpenStreetMap.'
+          read_only: true
+      -
+        handle: content
+        field:
+          type: markdown
+          display: Content
+          instructions: 'Optional notes or description of the place.'
+      -
+        handle: address
+        field:
+          type: text
+          display: Address
+          instructions: 'Physical address of the location. Used for display purposes and usually inferred via map search.'
+  location:
+    display: Location
+    fields:
+      -
+        handle: location
+        field:
+          type: location
+          display: 'Search & Locate'
+          instructions: 'Search for a place on OpenStreetMap to populate all geographic details.'
+      -
+        handle: osm_type
+        field:
+          type: select
+          display: 'OSM Type'
+          options:
+            node: Node
+            way: Way
+            relation: Relation
+          instructions: 'The type of element in OpenStreetMap.'
+          visibility: hidden
+      -
+        handle: osm_id
+        field:
+          type: text
+          display: 'OSM ID'
+          instructions: 'The unique OpenStreetMap identifier.'
+          visibility: hidden
+      -
+        handle: latitude
+        field:
+          type: float
+          display: Latitude
+      -
+        handle: longitude
+        field:
+          type: float
+          display: Longitude
+      -
+        handle: radius
+        field:
+          type: float
+          display: Radius
+          instructions: 'Radius in meters. Useful for non-precise, general area locations.'
