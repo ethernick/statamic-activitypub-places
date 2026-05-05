@@ -35,7 +35,7 @@
 
                         <!-- Map Preview (display only, server handles image generation) -->
                         <div class="h-48 w-full rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-inner">
-                            <div id="checkin-map" class="h-full w-full"></div>
+                            <div ref="mapPreviewContainer" class="h-full w-full"></div>
                         </div>
                     </div>
 
@@ -174,15 +174,27 @@ export default {
         },
         initMap() {
             if (this.map) this.destroyMap();
-            const lat = this.selected.latitude;
-            const lon = this.selected.longitude;
-            this.map = L.map('checkin-map', {
+            if (!this.$refs.mapPreviewContainer) return;
+
+            const lat = this.selected.latitude || this.selected.lat;
+            const lon = this.selected.longitude || this.selected.lon;
+
+            if (!lat || !lon) {
+                console.error('[ActivityPubPlaces] Invalid coordinates for map:', this.selected);
+                return;
+            }
+
+            this.map = L.map(this.$refs.mapPreviewContainer, {
                 zoomControl: false,
                 attributionControl: false
             }).setView([lat, lon], 15);
+
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
             this.marker = L.marker([lat, lon]).addTo(this.map);
-            setTimeout(() => { if (this.map && this.map._container) this.map.invalidateSize(); }, 400);
+
+            // Double-tap invalidateSize to handle transitions
+            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 100);
+            setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 500);
         },
         destroyMap() {
             if (this.map) {

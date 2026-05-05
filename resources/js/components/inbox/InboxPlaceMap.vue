@@ -26,6 +26,7 @@
 <script>
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getOsmUrl } from '../../mapUtils';
 
 export default {
     name: 'InboxPlaceMap',
@@ -43,8 +44,7 @@ export default {
             return `inbox-place-map-${this.note.id}`;
         },
         osmUrl() {
-            const { latitude: lat, longitude: lon } = this.note.location;
-            return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
+            return getOsmUrl(this.note.location);
         }
     },
     mounted() {

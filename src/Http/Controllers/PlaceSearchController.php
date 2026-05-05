@@ -366,6 +366,8 @@ class PlaceSearchController extends CpController
                     'address' => $entry->get('address'),
                     'latitude' => (float) $entry->get('latitude'),
                     'longitude' => (float) $entry->get('longitude'),
+                    'osm_type' => $entry->get('osm_type'),
+                    'osm_id' => $entry->get('osm_id'),
                     'is_internal' => (bool) $entry->get('is_internal'),
                     'edit_url' => $entry->editUrl(),
                     'uri' => $entry->get('activitypub_id'),

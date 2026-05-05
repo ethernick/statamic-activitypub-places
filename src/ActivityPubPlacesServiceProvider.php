@@ -56,6 +56,8 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
                 $data['address'] = $entry->get('address');
                 $data['latitude'] = $entry->get('latitude');
                 $data['longitude'] = $entry->get('longitude');
+                $data['osm_type'] = $entry->get('osm_type');
+                $data['osm_id'] = $entry->get('osm_id');
             });
 
             // Inject location data into notes from the ActivityPub JSON payload
@@ -113,6 +115,8 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
                             'latitude'  => (float) $lat,
                             'longitude' => (float) $lon,
                             'name'      => $name,
+                            'osm_type'  => $loc['osm_type'] ?? null,
+                            'osm_id'    => $loc['osm_id'] ?? null,
                         ];
                     }
                 }

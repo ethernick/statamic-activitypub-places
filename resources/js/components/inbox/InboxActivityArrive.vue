@@ -64,7 +64,13 @@ export default {
         }
     },
     mounted() {
-        this.$nextTick(() => this.initMap());
+        this.$nextTick(() => {
+            this.initMap();
+            // Ensure map is properly sized after DOM settlement
+            setTimeout(() => {
+                if (this.map) this.map.invalidateSize();
+            }, 100);
+        });
     },
     beforeDestroy() {
         if (this.map) {

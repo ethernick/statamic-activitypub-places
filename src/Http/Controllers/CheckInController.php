@@ -10,6 +10,7 @@ use Statamic\Facades\Entry;
 use Statamic\Facades\File;
 use Statamic\Facades\YAML;
 use Ethernick\ActivityPubCore\Services\ActivityPubUtils;
+use Ethernick\ActivityPubPlaces\Services\ActivityPubPlacesUtils;
 
 class CheckInController extends CpController
 {
@@ -115,11 +116,7 @@ class CheckInController extends CpController
     protected function createCompatibleNote(array $data, $placeEntry): void
     {
         $placeName = $placeEntry->get('title');
-        $lat       = (float) $placeEntry->get('latitude');
-        $lon       = (float) $placeEntry->get('longitude');
-
-        // Deep-link drops a pin and zooms to street level (zoom 17)
-        $osmUrl    = "https://www.openstreetmap.org/?mlat={$lat}&mlon={$lon}#map=17/{$lat}/{$lon}";
+        $osmUrl    = ActivityPubPlacesUtils::osmUrl($placeEntry->data()->all());
         $footer    = "\n\n📍 **[{$placeName}]({$osmUrl})**";
 
         $note = Entry::make()

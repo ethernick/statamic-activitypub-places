@@ -30,6 +30,8 @@
 </template>
 
 <script>
+import { getOsmUrl } from '../../mapUtils';
+
 export default {
     props: {
         open: Boolean,
@@ -60,7 +62,7 @@ export default {
                     description: 'Community-driven Wiki map',
                     color: '#7EBC6F',
                     iconSvg: '<svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M15 21l-6-2.12-5.45 2.73a.5.5 0 01-.73-.44v-14a.5.5 0 01.28-.45L9 4l6 2.12 5.45-2.73a.5.5 0 01.73.44v14a.5.5 0 01-.28.45L15 21zM9.54 18.25l4.92 1.74V6.51l-4.92-1.74v13.48z"/></svg>',
-                    url: (p) => `https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=16/${p.latitude}/${p.longitude}`
+                    url: (p) => getOsmUrl(p)
                 }
             ]
         }

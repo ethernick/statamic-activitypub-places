@@ -30,7 +30,7 @@
         </div>
         
         <!-- Summary/Content if any -->
-        <!--div v-if="activity.content" class="mt-3 text-sm text-gray-600 dark:text-gray-400 prose dark:prose-invert max-w-none" v-html="activity.content"></div-->
+        <div v-if="activity.content" class="mt-3 text-sm text-gray-600 dark:text-gray-400 prose dark:prose-invert max-w-none" v-html="activity.content"></div>
     </div>
 </template>
 
@@ -64,9 +64,15 @@ export default {
         }
     },
     mounted() {
-        this.$nextTick(() => this.initMap());
+        this.$nextTick(() => {
+            this.initMap();
+            // Ensure map is properly sized after DOM settlement
+            setTimeout(() => {
+                if (this.map) this.map.invalidateSize();
+            }, 100);
+        });
     },
-    beforeDestroy() {
+    beforeUnmount() {
         if (this.map) {
             this.map.remove();
         }
@@ -116,11 +122,11 @@ export default {
 </script>
 
 <style scoped>
-.inbox-activity-arrive >>> .leaflet-tile-pane {
-    filter: grayscale(0.2) contrast(1.1);
+.inbox-activity-arrive :deep(.leaflet-tile-pane) {
+    filter: none;
 }
-html.dark .inbox-activity-arrive >>> .leaflet-tile-pane,
-html.is-dark .inbox-activity-arrive >>> .leaflet-tile-pane {
+html.dark .inbox-activity-arrive :deep(.leaflet-tile-pane),
+html.is-dark .inbox-activity-arrive :deep(.leaflet-tile-pane) {
     filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 </style>

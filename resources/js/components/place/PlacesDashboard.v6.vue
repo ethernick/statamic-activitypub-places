@@ -6,7 +6,7 @@
                 Places Explorer
             </h1>
             <div class="flex gap-2">
-                <button @click="createNewPlace" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-linear-to-b from-primary/90 to-primary hover:bg-primary-hover text-white disabled:opacity-60 disabled:text-white dark:disabled:text-white border border-primary-border shadow-ui-md inset-shadow-2xs inset-shadow-white/25 disabled:inset-shadow-none dark:disabled:inset-shadow-none [&_svg]:text-white [&_svg]:opacity-60 px-4 h-10 text-sm gap-2 rounded-lg">
+                <button @click="createNewPlace" class="btn btn-primary flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     New Place
                 </button>
@@ -35,6 +35,17 @@
                             <p class="text-sm text-gray-700 dark:text-gray-300">{{ selectedPlace.address }}</p>
                         </div>
 
+                        <div v-if="selectedPlace.osm_type && selectedPlace.osm_id">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">OpenStreetMap</label>
+                            <a :href="getOsmUrl(selectedPlace)" 
+                               target="_blank" 
+                               class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                                <span>{{ selectedPlace.osm_type }}/{{ selectedPlace.osm_id }}</span>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            </a>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                             <div>
                                 <label class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Latitude</label>
@@ -47,7 +58,7 @@
                         </div>
 
                         <div class="pt-6">
-                            <a :href="selectedPlace.edit_url" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 shadow-sm px-4 w-full h-10 text-sm rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Edit Entry Details</a>
+                            <a :href="selectedPlace.edit_url" class="btn w-full justify-center">Edit Entry Details</a>
                         </div>
                     </div>
                 </div>
@@ -73,24 +84,16 @@
                     <div v-for="activity in activities" :key="activity.id" class="inbox-stream-item">
                         <div class="card p-4 hover:shadow-md transition-shadow">
                             <div class="flex items-start gap-4">
-                                <template v-if="activity.actor">
-                                    <img :src="activity.actor.avatar || 'https://www.gravatar.com/avatar/?d=mp'" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 object-cover flex-shrink-0">
-                                </template>
-                                <div v-else class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0 flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between mb-1">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-sm truncate">{{ activity.actor_name || 'ActivityPub User' }}</span>
-                                            <span v-if="activity.actor" class="text-[10px] text-gray-500 truncate">{{ activity.actor.handle }}</span>
-                                        </div>
-                                        <span class="text-[10px] text-gray-400 whitespace-nowrap">{{ activity.date_human || formatDate(activity.date) }}</span>
+                                        <span class="font-bold text-sm truncate">{{ activity.actor_name || 'ActivityPub User' }}</span>
+                                        <span class="text-[10px] text-gray-400">{{ formatDate(activity.date) }}</span>
                                     </div>
-                                    <div v-if="activity.content" class="text-sm text-gray-700 dark:text-gray-300 mt-2 prose prose-sm dark:prose-invert max-w-none" v-html="activity.content"></div>
-                                    <div v-else class="text-sm text-gray-500 italic mt-2">
-                                        {{ activity.activity_type === 'Arrive' ? 'Checked in' : 'Shared a location' }}
-                                    </div>
+                                    <div class="text-sm text-gray-700 dark:text-gray-300 mb-2 truncate-3-lines">{{ activity.title || activity.content_raw || 'Shared a location' }}</div>
+                                    <div v-if="activity.content" class="text-xs text-gray-500 line-clamp-2" v-html="activity.content"></div>
                                 </div>
                             </div>
                         </div>
@@ -112,14 +115,7 @@
 <script>
 import L from 'leaflet';
 import PlaceInboxModals from './PlaceInboxModals.vue';
-
-// Fix for Leaflet default icon issues in Vite
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+import { getOsmUrl } from '../../mapUtils';
 
 export default {
     components: {
@@ -149,15 +145,14 @@ export default {
     beforeUnmount() {
         window.removeEventListener('resize', this.invalidateSize);
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
-        
         if (this.map) {
             this.map.remove();
-            this.map = null;
         }
     },
     methods: {
-        async invalidateSize() {
-            if (this.map && this.map._container) {
+        getOsmUrl,
+        invalidateSize() {
+            if (this.map) {
                 this.map.invalidateSize();
             }
         },
@@ -172,14 +167,11 @@ export default {
             });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
-            // Dark mode support handled via CSS
         },
         fetchPlaces() {
             this.loadingPlaces = true;
             this.$axios.get(cp_url('activitypub/places/all'))
             .then(response => {
-                if (!this.map) return;
                 this.allPlaces = response.data.places;
                 this.renderMarkers();
                 this.autoZoom();
@@ -189,14 +181,12 @@ export default {
             });
         },
         renderMarkers() {
-            if (!this.map) return;
-            const blueIcon = L.icon({
+            // Leaflet default icon fix
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
                 iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
                 shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
             });
 
             const greyIcon = L.icon({
@@ -211,7 +201,7 @@ export default {
 
             this.allPlaces.forEach(place => {
                 const marker = L.marker([place.latitude, place.longitude], {
-                    icon: place.is_internal ? blueIcon : greyIcon
+                    icon: place.is_internal ? new L.Icon.Default() : greyIcon
                 }).addTo(this.map);
 
                 marker.on('click', () => {
@@ -220,14 +210,16 @@ export default {
             });
         },
         autoZoom() {
-            if (!this.map || this.allPlaces.length === 0) return;
-            const bounds = L.latLngBounds(this.allPlaces.map(p => [p.latitude, p.longitude]));
-            this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+            if (this.allPlaces.length > 0) {
+                const bounds = L.latLngBounds(this.allPlaces.map(p => [p.latitude, p.longitude]));
+                this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+            }
         },
         selectPlace(place) {
-            if (!this.map) return;
             this.selectedPlace = place;
             this.fetchActivities(place.id);
+            
+            // Pan smoothly
             this.map.panTo([place.latitude, place.longitude], { animate: true });
         },
         fetchActivities(id) {
@@ -259,14 +251,20 @@ export default {
 </script>
 
 <style scoped>
-:deep(.marker-grey) {
+.marker-grey {
     filter: saturate(0) brightness(1.4) opacity(0.8);
 }
 .places-dashboard :deep(.leaflet-tile-pane) {
+    filter: none;
+}
+html.dark .places-dashboard :deep(.leaflet-tile-pane),
+html.is-dark .places-dashboard :deep(.leaflet-tile-pane) {
     filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
-/* Revert filter for light mode if it was applied via dark class elsewhere */
-:root:not(.dark) .places-dashboard :deep(.leaflet-tile-pane) {
-    filter: none !important;
+.truncate-3-lines {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 </style>
