@@ -28,9 +28,14 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
         \Ethernick\ActivityPubPlaces\Fieldtypes\Location::class,
     ];
 
+    protected $tags = [
+        'activitypub_place' => \Ethernick\ActivityPubPlaces\Tags\ActivitypubPlace::class,
+    ];
+
     public function boot(): void
     {
         parent::boot();
+
 
         // Register ActivityPub Type
         if (class_exists(ActivityPubTypes::class)) {
@@ -223,7 +228,7 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
     protected function registerAssets(): void
     {
         $packageName = 'ethernick/activitypub-places';
-        $version = \Statamic\Statamic::version();
+        $version = config('statamic.system.version') ?: (class_exists(\Statamic\Statamic::class) ? \Statamic\Statamic::version() : '6.13.0');
         $isV6 = version_compare($version, '6.0.0', '>=');
         $distSubdir = $isV6 ? 'v6' : 'v5';
 

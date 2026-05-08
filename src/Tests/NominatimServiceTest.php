@@ -38,7 +38,7 @@ class NominatimServiceTest extends PlacesTestCase
 
         Http::assertSent(function ($request) {
             return $request->hasHeader('User-Agent', 'TestAgent/1.0') &&
-                   $request->url() == 'https://nominatim.openstreetmap.org/search?q=Paris&format=jsonv2&addressdetails=1&limit=10';
+                   $request->url() == 'https://nominatim.openstreetmap.org/search?q=Paris&format=jsonv2&addressdetails=1&polygon_geojson=1&limit=10';
         });
     }
 

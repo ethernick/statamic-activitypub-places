@@ -16,6 +16,9 @@ abstract class PlacesTestCase extends TestCase
         parent::setUp();
         $this->setupSandbox();
         
+        // Ensure Places collection exists for tests
+        $this->setupCollections(['places']);
+
         // Ensure stache is clear
         \Statamic\Facades\Stache::clear();
     }

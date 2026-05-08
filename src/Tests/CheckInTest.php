@@ -155,9 +155,27 @@ class CheckInTest extends TestCase
     protected function assertDatabaseHasEntry($collection, $data)
     {
         $query = Entry::query()->where('collection', $collection);
-        foreach ($data as $key => $value) {
-            $query->where($key, $value);
+        $entries = $query->get();
+        
+        $found = $entries->filter(function($entry) use ($data) {
+            foreach ($data as $key => $value) {
+                $actual = $entry->get($key);
+                
+                // Handle array-wrapped values (like actors)
+                if (is_array($actual) && !is_array($value)) {
+                    if (!in_array($value, $actual)) return false;
+                } elseif ($actual != $value) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if ($found->count() === 0) {
+            dump("Entries in {$collection}:", $entries->map->data()->all());
+            dump("Searching for:", $data);
         }
-        $this->assertTrue($query->count() > 0, "Entry not found in collection {$collection}");
+
+        $this->assertTrue($found->count() > 0, "Entry not found in collection {$collection}");
     }
 }
