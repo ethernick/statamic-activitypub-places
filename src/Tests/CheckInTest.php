@@ -144,12 +144,6 @@ class CheckInTest extends TestCase
         $this->assertStringContainsString('Comp Place', $note->get('content'));
         $this->assertStringNotContainsString('View on Map', $note->get('content')); // Redundant link removed
         $this->assertEquals($place->id(), $note->get('place'));
-        
-        // Verify Attachment
-        $attachments = $note->get('activitypub_attachments');
-        $this->assertCount(1, $attachments);
-        $this->assertEquals('Image', $attachments[0]['type']);
-        $this->assertStringContainsString('staticmap.openstreetmap.de', $attachments[0]['url']);
     }
 
     protected function assertDatabaseHasEntry($collection, $data)

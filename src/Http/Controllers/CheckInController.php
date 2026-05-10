@@ -119,11 +119,6 @@ class CheckInController extends CpController
         $osmUrl    = ActivityPubPlacesUtils::osmUrl($placeEntry->data()->all());
         $footer    = "\n\n📍 **[{$placeName}]({$osmUrl})**";
 
-        // Generate static map URL for attachment
-        $lat = $placeEntry->get('latitude');
-        $lon = $placeEntry->get('longitude');
-        $staticMapUrl = "https://staticmap.openstreetmap.de/staticmap.php?center={$lat},{$lon}&zoom=15&size=600x300&maptype=mapnik&markers={$lat},{$lon},ol-marker";
-
         $note = Entry::make()
             ->collection('notes')
             ->published(true)
@@ -134,14 +129,6 @@ class CheckInController extends CpController
                 'is_internal' => true,
                 'place'       => $placeEntry->id(),
                 'tags'        => $data['tags'] ?? [],
-                'activitypub_attachments' => [
-                    [
-                        'type' => 'Image',
-                        'mediaType' => 'image/png',
-                        'url' => $staticMapUrl,
-                        'name' => "Map of {$placeName}"
-                    ]
-                ]
             ]);
 
         $note->save();
