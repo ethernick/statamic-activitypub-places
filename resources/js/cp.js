@@ -8,11 +8,18 @@ import InboxNewCheckIn from './components/inbox/InboxNewCheckIn.vue';
 import PlaceInboxModals from './components/place/PlaceInboxModals.vue';
 import PlaceSummary from './components/place/PlaceSummary.vue';
 import MapServiceSelectorStack from './components/map/MapServiceSelectorStack.vue';
+import MapDirectionsDropdown from './components/map/MapDirectionsDropdown.vue';
 import InboxPlaceMap from './components/inbox/InboxPlaceMap.vue';
 import InboxActivityArrive from './components/inbox/InboxActivityArrive.vue';
+import * as mapUtils from './mapUtils';
 
 const bootHooks = () => {
     if (typeof Statamic !== 'undefined' && Statamic.$activitypub) {
+        // Expose centralized places mapping helpers on $activitypub
+        Statamic.$activitypub.places = {
+            ...mapUtils
+        };
+
         // Register Inbox Hooks
         Statamic.$activitypub.hooks.register('inbox-new-dropdown', {
             component: InboxNewCheckIn,
@@ -29,12 +36,7 @@ const bootHooks = () => {
             priority: 15
         });
 
-        Statamic.$activitypub.hooks.register('inbox-note-content', {
-            component: PlaceSummary,
-            priority: 15
-        });
-
-        // Render an inline Leaflet map for any note that has location data
+        // Render an inline Leaflet map for any note/place that has location data
         Statamic.$activitypub.hooks.register('inbox-note-content', {
             component: InboxPlaceMap,
             priority: 20
@@ -58,6 +60,7 @@ const bootComponents = () => {
             Statamic.$components.register('location-fieldtype', LocationFieldtype);
             Statamic.$components.register('places-dashboard', PlacesDashboard);
             Statamic.$components.register('map-service-selector-stack', MapServiceSelectorStack);
+            Statamic.$components.register('map-directions-dropdown', MapDirectionsDropdown);
         });
     } else {
         setTimeout(bootComponents, 10);

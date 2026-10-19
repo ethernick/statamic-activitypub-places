@@ -33,7 +33,7 @@ class CheckInController extends CpController
         if ($placeData['is_internal'] ?? false) {
             $placeEntry = Entry::find($placeData['internal_id']);
         } else {
-            $placeEntry = $this->createPlaceFromCheckIn($placeData, $data['actor']);
+            $placeEntry = ActivityPubPlacesUtils::createPlace($placeData, $data['actor']);
         }
 
         if (!$placeEntry) {
@@ -41,15 +41,20 @@ class CheckInController extends CpController
         }
 
         // 2. Create Arrive Activity
+        $arriveUuid = (string) \Illuminate\Support\Str::uuid();
+        $arriveNow = now();
         $arrive = Entry::make()
             ->collection('activities')
+            ->id($arriveUuid)
+            ->slug($arriveUuid)
+            ->date($arriveNow)
             ->published(true)
             ->data([
                 'type'        => 'Arrive',
                 'actor'       => [$data['actor']],
                 'object'      => $placeEntry->id(),
                 'summary'     => $data['content'],
-                'date'        => now()->format('Y-m-d H:i'),
+                'date'        => $arriveNow->format('Y-m-d H:i:s'),
                 'is_internal' => true,
                 'place'       => $placeEntry->id(),
             ]);
@@ -72,44 +77,6 @@ class CheckInController extends CpController
     }
 
     /**
-     * Create a new Place entry from OSM data.
-     */
-    protected function createPlaceFromCheckIn(array $data, string $actorId)
-    {
-        $slug = "{$data['osm_type']}/{$data['osm_id']}";
-
-        $entry = Entry::make()
-            ->collection('places')
-            ->slug($slug);
-
-        $name = $data['name'] ?? $data['display_name'];
-        if (str_contains($name, ',')) {
-            $name = explode(',', $name)[0];
-        }
-
-        $entry->set('title', $name);
-        $entry->set('osm_name', $data['name'] ?? $data['display_name']);
-        $entry->set('address', $data['address'] ?? $data['display_name'] ?? '');
-        $entry->set('osm_type', (string) $data['osm_type']);
-        $entry->set('osm_id', (string) $data['osm_id']);
-        $entry->set('latitude', (float) $data['lat']);
-        $entry->set('longitude', (float) $data['lon']);
-        $entry->set('is_internal', true);
-        $entry->set('actor', [$actorId]);
-        $entry->set('location', [
-            'osm_type'  => $data['osm_type'],
-            'osm_id'    => $data['osm_id'],
-            'latitude'  => (float) $data['lat'],
-            'longitude' => (float) $data['lon'],
-            'address'   => $data['address'] ?? $data['display_name'] ?? '',
-            'title'     => $name,
-        ]);
-
-        $entry->save();
-        return $entry;
-    }
-
-    /**
      * Create a standard Note activity for platforms that don't support Arrive.
      * Includes an OpenStreetMap link so followers can see the location interactively.
      */
@@ -119,13 +86,19 @@ class CheckInController extends CpController
         $osmUrl    = ActivityPubPlacesUtils::osmUrl($placeEntry->data()->all());
         $footer    = "\n\n📍 **[{$placeName}]({$osmUrl})**";
 
+        $noteUuid = (string) \Illuminate\Support\Str::uuid();
+        $noteNow  = now();
+
         $note = Entry::make()
             ->collection('notes')
+            ->id($noteUuid)
+            ->slug($noteUuid)
+            ->date($noteNow)
             ->published(true)
             ->data([
                 'content'     => $data['content'] . $footer,
                 'actor'       => [$data['actor']],
-                'date'        => now()->format('Y-m-d H:i'),
+                'date'        => $noteNow->format('Y-m-d H:i:s'),
                 'is_internal' => true,
                 'place'       => $placeEntry->id(),
                 'tags'        => $data['tags'] ?? [],
