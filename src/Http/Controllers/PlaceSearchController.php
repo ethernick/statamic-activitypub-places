@@ -7,6 +7,7 @@ namespace Ethernick\ActivityPubPlaces\Http\Controllers;
 use Illuminate\Http\Request;
 use Statamic\Http\Controllers\CP\CpController;
 use Ethernick\ActivityPubPlaces\Services\NominatimService;
+use Ethernick\ActivityPubCore\Storage\ActivityPubPayload;
 
 class PlaceSearchController extends CpController
 {
@@ -378,7 +379,7 @@ class PlaceSearchController extends CpController
     }
 
     /**
-     * Get related activities/notes for a specific place.
+     * Get related activities/notes/events for a specific place.
      */
     public function activities(string $id)
     {
@@ -389,106 +390,67 @@ class PlaceSearchController extends CpController
         }
 
         $uri = $place->get('activitypub_id');
+        $placeId = $place->id();
 
-        // Note: For now we search activities where the object matches the place URI
-        // or the place name is mentioned (basic fallback).
+        // 1. Query activities collection (check-ins, likes, boosts, arrives, etc.)
         $activities = \Statamic\Facades\Entry::query()
             ->where('collection', 'activities')
             ->get()
-            ->filter(function ($entry) use ($uri, $id) {
+            ->filter(function ($entry) use ($uri, $placeId) {
                 $obj = $entry->get('object');
-                if (is_array($obj) && isset($obj['id']) && $obj['id'] === $uri) {
+                if (is_array($obj) && isset($obj['id']) && in_array($obj['id'], array_filter([$uri, $placeId]), true)) {
                     return true;
                 }
-                if ($entry->get('place') === $id) {
+                if ($entry->get('place') && in_array($entry->get('place'), array_filter([$placeId, $uri]), true)) {
+                    return true;
+                }
+                if ($entry->get('location') && in_array($entry->get('location'), array_filter([$placeId, $uri]), true)) {
+                    return true;
+                }
+                $raw = ActivityPubPayload::for($entry)->raw();
+                if ($raw && (($placeId && str_contains($raw, (string)$placeId)) || ($uri && str_contains($raw, (string)$uri)))) {
                     return true;
                 }
                 return false;
             })
-            ->sortByDesc('date')
             ->values();
 
-        // Transform for InboxFeed
-        // We'll use the same transformation logic as the Inbox if available, 
-        // but for now we'll return a basic structure compatible with InboxNote.
-        $data = $activities->map(function ($entry) {
-            $actorId = $entry->get('actor');
-            if (is_array($actorId)) $actorId = $actorId[0] ?? null;
-            
-            $actorEntry = $actorId ? \Statamic\Facades\Entry::find($actorId) : null;
-            $actor = $actorEntry ? \Ethernick\ActivityPubCore\Services\ActivityPubUtils::transformActorForCp($actorEntry) : null;
-
-            $object = $entry->get('object');
-            $objectType = is_array($object) ? ($object['type'] ?? 'Object') : 'Object';
-            $objectSummary = is_array($object) ? ($object['name'] ?? $object['summary'] ?? null) : null;
-            
-            // Handle relationship arrays
-            if (is_array($object) && !isset($object['type']) && isset($object[0])) {
-                $object = $object[0];
-            }
-
-            if (is_string($object)) {
-                $localEntry = \Statamic\Facades\Entry::find($object);
-                if ($localEntry) {
-                    $handle = $localEntry->collection()->handle();
-                    $objectType = ($handle === 'notes') ? 'Note' : (($handle === 'places') ? 'Place' : ucfirst(\Illuminate\Support\Str::singular($handle)));
-                    $objectSummary = $localEntry->get('title') ?? $localEntry->get('name');
-
-                    // If summary is a UUID or empty, try content field
-                    if (!$objectSummary || preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string)$objectSummary)) {
-                        $entryContent = $localEntry->get('content');
-                        if ($entryContent) {
-                            $objectSummary = \Illuminate\Support\Str::limit(strip_tags($entryContent), 100);
-                        }
-                    }
+        // 2. Query notes collection (posts tagged at this venue/place)
+        $notes = \Statamic\Facades\Entry::query()
+            ->where('collection', 'notes')
+            ->get()
+            ->filter(function ($entry) use ($uri, $placeId) {
+                $loc = $entry->get('location') ?? $entry->get('place');
+                if (is_array($loc)) {
+                    return in_array($placeId, $loc, true) || ($uri && in_array($uri, $loc, true));
                 }
-            }
-            
-            // JSON Fallback
-            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string)$objectSummary);
-            if ($apJson = $entry->get('activitypub_json')) {
-                if ($objectType === 'Object' || $isUuid) {
-                    $payload = is_string($apJson) ? json_decode($apJson, true) : $apJson;
-                    $nestedObj = $payload['object'] ?? null;
-                    if (is_array($nestedObj) && isset($nestedObj['type'])) {
-                        $objectType = $nestedObj['type'];
-                        
-                        // If we had a UUID or nothing, try to get a better name/summary/content
-                        if (!$objectSummary || $isUuid) {
-                            $newSummary = $nestedObj['name'] ?? $nestedObj['summary'] ?? null;
-                            if (!$newSummary && in_array($nestedObj['type'], ['Question', 'Note', 'Place'])) {
-                                $summaryText = strip_tags($nestedObj['content'] ?? '');
-                                $newSummary = \Illuminate\Support\Str::limit($summaryText, 100);
-                            }
-                            if ($newSummary) {
-                                $objectSummary = $newSummary;
-                            }
-                        }
-                    }
+                return in_array($loc, array_filter([$placeId, $uri]), true);
+            })
+            ->values();
+
+        // 3. Query events collection (events scheduled at this venue/place)
+        $events = \Statamic\Facades\Entry::query()
+            ->where('collection', 'events')
+            ->get()
+            ->filter(function ($entry) use ($uri, $placeId) {
+                $loc = $entry->get('location') ?? $entry->get('place');
+                if (is_array($loc)) {
+                    return in_array($placeId, $loc, true) || ($uri && in_array($uri, $loc, true));
                 }
-            }
+                return in_array($loc, array_filter([$placeId, $uri]), true);
+            })
+            ->values();
 
-            $item = [
-                'id' => $entry->id(),
-                'type' => 'activity',
-                'activity_type' => $entry->get('type'),
-                'title' => $entry->get('title'),
-                'content' => $entry->get('content'),
-                'date' => $entry->get('date'),
-                'date_human' => $entry->get('date') ? \Carbon\Carbon::parse($entry->get('date'))->diffForHumans() : null,
-                'actor' => $actor,
-                'actor_name' => $actor['name'] ?? 'ActivityPub User',
-                'activitypub_json' => $entry->get('activitypub_json'),
-                'object_type' => $objectType,
-                'object_summary' => $objectSummary,
-            ];
-            
-            // Execute hooks (e.g. for Arrive activities to extract location/content)
-            \Ethernick\ActivityPubCore\Services\ActivityPubTypes::executeTransformHooks($entry, $item);
-            
-            return $item;
-        });
+        $allEntries = $activities->concat($notes)->concat($events);
 
-        return response()->json(['data' => $data]);
+        $allData = $allEntries->map(function ($entry) {
+            return \Ethernick\ActivityPubCore\Services\ActivityPubUtils::transformEntryForFeed($entry);
+        })
+        ->sortByDesc(function ($item) {
+            return $item['date'] ?? '';
+        })
+        ->values();
+
+        return response()->json(['data' => $allData]);
     }
 }

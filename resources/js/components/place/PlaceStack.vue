@@ -8,22 +8,42 @@
             <!-- Phase 1: Search -->
             <div v-show="!selected">
                 <p class="text-xs text-gray-500 mb-6">Search for a location to share with your followers.</p>
-                <location-search @selected="handleSelected" />
+                <location-search 
+                    @change="provisionalLocation = $event"
+                    @selected="handleSelected" 
+                />
             </div>
 
             <!-- Phase 2: Metadata Details -->
             <transition name="slide-up">
                 <div v-if="selected" class="mt-4 space-y-6">
-                    <!-- Location Brief -->
-                    <div class="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <!-- Location Summary (Click to change location) -->
+                    <div 
+                        @click="changeLocation" 
+                        class="group cursor-pointer py-1.5 -mx-1 px-1 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-800/60 transition-colors"
+                        title="Click to change location"
+                    >
+                        <div class="flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-gray-400 group-hover:text-primary shrink-0 mt-0.5 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">
+                                        {{ selected.osm_name }}
+                                    </span>
+                                    <button type="button" @click.stop="changeLocation" class="text-gray-400 hover:text-gray-900 dark:hover:text-white group-hover:text-primary transition-colors ml-auto p-0.5 shrink-0" title="Change Location">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed break-words">
+                                    {{ selected.address }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold truncate text-blue-900 dark:text-blue-300">{{ selected.osm_name }}</div>
-                            <div class="text-[10px] text-gray-500 truncate">{{ selected.address }}</div>
-                        </div>
-                        <button @click="selected = null" class="btn btn-xs">Change</button>
                     </div>
 
                     <!-- Actor Selection -->
@@ -66,7 +86,24 @@
 
         <template #footer-end>
             <button @click="handleClosed" class="btn">Cancel</button>
-            <button @click="save" class="btn btn-primary ml-2" :disabled="!selected || saving">
+
+            <!-- Phase 1: Confirm Location -->
+            <button 
+                v-if="!selected"
+                @click="confirmLocation" 
+                class="btn btn-primary ml-2" 
+                :disabled="!provisionalLocation"
+            >
+                Confirm Location
+            </button>
+
+            <!-- Phase 2: Save Place -->
+            <button 
+                v-else
+                @click="save" 
+                class="btn btn-primary ml-2" 
+                :disabled="saving"
+            >
                 <span v-if="saving" class="loading loading-xs mr-2"></span>
                 Save Place
             </button>
@@ -91,6 +128,7 @@ export default {
     data() {
         return {
             selected: null,
+            provisionalLocation: null,
             saving: false,
             actors: [],
             form: {
@@ -134,6 +172,14 @@ export default {
                 });
         },
         handleSelected(result) {
+            this.provisionalLocation = result;
+            this.applyLocation(result);
+        },
+        confirmLocation() {
+            if (!this.provisionalLocation) return;
+            this.applyLocation(this.provisionalLocation);
+        },
+        applyLocation(result) {
             const osm_name = result.name || result.display_name.split(',')[0];
             this.selected = {
                 osm_type: result.osm_type,
@@ -148,6 +194,9 @@ export default {
             if (!this.form.title || this.form.title === '') {
                 this.form.title = osm_name;
             }
+        },
+        changeLocation() {
+            this.selected = null;
         },
         save() {
             if (this.saving || !this.selected) return;
@@ -185,6 +234,7 @@ export default {
         },
         reset() {
             this.selected = null;
+            this.provisionalLocation = null;
             this.form.title = '';
             this.form.content = '';
             // keep actor selection for efficiency

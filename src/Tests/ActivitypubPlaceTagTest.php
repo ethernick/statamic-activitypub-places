@@ -83,4 +83,72 @@ class ActivitypubPlaceTagTest extends TestCase
         $this->assertEquals('https://www.openstreetmap.org/way/999', $output[0]['url']);
         $this->assertStringContainsString('google.com/maps', $output[1]['url']);
     }
+
+    public function test_tag_resolves_place_from_non_place_context_entry_with_location()
+    {
+        // 1. Mock Place Entry
+        $mockPlace = Mockery::mock(\Statamic\Entries\Entry::class);
+        $mockPlace->shouldReceive('id')->andReturn('mock-place-789');
+        $mockPlace->shouldReceive('get')->with('latitude')->andReturn(49.145);
+        $mockPlace->shouldReceive('get')->with('longitude')->andReturn(-122.666);
+        $mockPlace->shouldReceive('get')->with('title')->andReturn('Event Arena');
+
+        $mockPlaceCollection = Mockery::mock();
+        $mockPlaceCollection->shouldReceive('handle')->andReturn('places');
+        $mockPlace->shouldReceive('collection')->andReturn($mockPlaceCollection);
+
+        // 2. Mock Event Entry that points to Place via 'location'
+        $mockEvent = Mockery::mock(\Statamic\Entries\Entry::class);
+        $mockEvent->shouldReceive('id')->andReturn('mock-event-999');
+        $mockEvent->shouldReceive('get')->with('location')->andReturn('mock-place-789');
+        $mockEvent->shouldReceive('get')->with('place')->andReturn(null);
+
+        $mockEventCollection = Mockery::mock();
+        $mockEventCollection->shouldReceive('handle')->andReturn('events');
+        $mockEvent->shouldReceive('collection')->andReturn($mockEventCollection);
+
+        Entry::shouldReceive('find')->with('mock-event-999')->andReturn($mockEvent);
+        Entry::shouldReceive('find')->with('mock-place-789')->andReturn($mockPlace);
+
+        // 3. Instantiate Tag with event context (simulating viewing an event page)
+        $tag = new ActivitypubPlace();
+        $tag->setContext(['id' => 'mock-event-999', 'location' => 'mock-place-789']);
+        $tag->setParameters([]);
+        $tag->method = 'map';
+
+        $output = $tag->map();
+
+        $this->assertStringContainsString('49.145', $output);
+        $this->assertStringContainsString('-122.666', $output);
+        $this->assertStringContainsString('Event Arena', $output);
+    }
+
+    public function test_place_links_tag_pair_returns_links_data_structure()
+    {
+        $mockPlace = Mockery::mock(\Statamic\Entries\Entry::class);
+        $mockPlace->shouldReceive('id')->andReturn('mock-place-abc');
+        $mockPlace->shouldReceive('get')->with('latitude')->andReturn(49.145);
+        $mockPlace->shouldReceive('get')->with('longitude')->andReturn(-122.666);
+        $mockPlace->shouldReceive('get')->with('osm_type')->andReturn('way');
+        $mockPlace->shouldReceive('get')->with('osm_id')->andReturn('12345');
+        $mockPlace->shouldReceive('get')->with('title')->andReturn('Event Arena');
+
+        $mockPlaceCollection = Mockery::mock();
+        $mockPlaceCollection->shouldReceive('handle')->andReturn('places');
+        $mockPlace->shouldReceive('collection')->andReturn($mockPlaceCollection);
+
+        Entry::shouldReceive('find')->with('mock-place-abc')->andReturn($mockPlace);
+
+        $tag = new ActivitypubPlace();
+        $tag->setContext(['id' => 'mock-place-abc']);
+        $tag->setParameters([]);
+        $tag->isPair = true;
+
+        $output = $tag->links();
+
+        $this->assertIsArray($output);
+        $this->assertEquals('https://www.openstreetmap.org/way/12345', $output[0]['url']);
+        $this->assertStringContainsString('google.com/maps', $output[1]['url']);
+        $this->assertStringContainsString('maps.apple.com', $output[2]['url']);
+    }
 }

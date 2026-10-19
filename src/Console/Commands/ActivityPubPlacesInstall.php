@@ -59,12 +59,12 @@ class ActivityPubPlacesInstall extends Command
 
     protected function ensureBlueprint(string $handle): void
     {
-        $blueprintDir = resource_path("blueprints/collections/{$handle}");
+        $blueprintPath = ActivityPubUtils::blueprintPath("collections/{$handle}/place.yaml");
+        $blueprintDir = dirname($blueprintPath);
         if (!File::exists($blueprintDir)) {
             File::makeDirectory($blueprintDir, 0755, true);
         }
 
-        $blueprintPath = "{$blueprintDir}/place.yaml";
         $stubPath = __DIR__ . '/../../../resources/blueprints/places/place.yaml';
 
         if (!File::exists($stubPath)) {

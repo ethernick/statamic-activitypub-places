@@ -24,7 +24,6 @@
             <div class="w-full md:w-1/3 space-y-6">
                 <div class="card p-6 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm h-full">
                     <div class="mb-6">
-                        <div class="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-1">{{ selectedPlace.is_internal ? 'Internal Entry' : 'Federated Entry' }}</div>
                         <h2 class="text-2xl font-bold leading-tight">{{ selectedPlace.title }}</h2>
                         <div v-if="selectedPlace.osm_name && selectedPlace.osm_name !== selectedPlace.title" class="text-xs text-gray-400 italic">{{ selectedPlace.osm_name }}</div>
                     </div>
@@ -64,40 +63,27 @@
                 </div>
             </div>
 
-            <!-- Activity Stream Column (2/3) -->
+            <!-- Activity Stream Column (2/3) - Stream title removed for clean feed appearance -->
             <div class="w-full md:w-2/3">
-                <div class="mb-4 flex items-center justify-between">
-                    <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Related Activity Stream</h3>
-                </div>
-                
-                <div v-if="loadingActivities" class="card p-12 flex flex-col items-center justify-center text-gray-400">
-                    <span class="loading loading-lg mb-4"></span>
-                    <p class="text-sm animate-pulse">Syncing related check-ins...</p>
-                </div>
+                <div class="card p-0 overflow-hidden bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div v-if="loadingActivities" class="p-12 flex flex-col items-center justify-center text-gray-400">
+                        <span class="loading loading-lg mb-4"></span>
+                        <p class="text-sm animate-pulse">Syncing related activity...</p>
+                    </div>
 
-                <div v-else-if="activities.length === 0" class="card p-12 text-center text-gray-400 border-dashed border-2 border-gray-200 dark:border-gray-800">
-                    <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                    <p>No federation activities found for this location yet.</p>
-                </div>
+                    <div v-else-if="activities.length === 0" class="p-12 text-center text-gray-400">
+                        <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                        <p>No federation activities found for this location yet.</p>
+                    </div>
 
-                <div v-else class="flex flex-col gap-4">
-                    <div v-for="activity in activities" :key="activity.id" class="inbox-stream-item">
-                        <!-- We reuse a simplified version of the inbox note card here -->
-                        <div class="card p-4 hover:shadow-md transition-shadow">
-                            <div class="flex items-start gap-4">
-                                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex-shrink-0 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="font-bold text-sm truncate">{{ activity.actor_name || 'ActivityPub User' }}</span>
-                                        <span class="text-[10px] text-gray-400">{{ formatDate(activity.date) }}</span>
-                                    </div>
-                                    <div class="text-sm text-gray-700 dark:text-gray-300 mb-2 truncate-3-lines">{{ activity.title || activity.content_raw || 'Shared a location' }}</div>
-                                    <div v-if="activity.content" class="text-xs text-gray-500 line-clamp-2" v-html="activity.content"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        <activitypub-post-card 
+                            v-for="activity in activities" 
+                            :key="activity.id" 
+                            :item="activity" 
+                            :readonly="true" 
+                            :actors="actors"
+                        />
                     </div>
                 </div>
             </div>
@@ -109,18 +95,20 @@
             <p class="text-sm">Click any pin on the map to explore local activity and metadata.</p>
         </div>
 
-        <place-inbox-modals @submit-success="fetchPlaces" />
+        <activitypub-modals :actors="actors" @submit-success="fetchPlaces" />
     </div>
 </template>
 
 <script>
 import L from 'leaflet';
-import PlaceInboxModals from './PlaceInboxModals.vue';
 import { getOsmUrl } from '../../mapUtils';
 
 export default {
-    components: {
-        PlaceInboxModals
+    props: {
+        actors: {
+            type: Array,
+            default: () => []
+        }
     },
     data() {
         return {
@@ -257,6 +245,28 @@ export default {
                 month: 'short',
                 day: 'numeric'
             });
+        },
+        getActivityVerb(activity) {
+            if (activity.activity_type === 'Like') return 'liked';
+            if (activity.activity_type === 'Announce') return 'boosted';
+            if (activity.activity_type === 'Follow') return 'followed';
+            if (activity.activity_type === 'Arrive') return 'checked in at';
+            return (activity.activity_type || 'activity').toLowerCase();
+        },
+        formatEventTime(time) {
+            if (!time) return '';
+            try {
+                const d = new Date(time);
+                return d.toLocaleDateString(undefined, { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return time;
+            }
         }
     }
 }
