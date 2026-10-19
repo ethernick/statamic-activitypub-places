@@ -13,7 +13,7 @@
 
 > [!NOTE]  
 > **Pre-Release:**  
-> ActivityPub Places is an early companion addon for [`statamic-activitypub-core`](https://worktree.ca/ethernick/statamic-activitypub-core). Free for local development and non-production testing under our [Commercial Source-Available License](https://worktree.ca/ethernick/statamic-activitypub-places/src/branch/main/LICENSE.md). Available for feedback ahead of official Marketplace publication.
+> ActivityPub Places is an early companion addon for [`statamic-activitypub-core`](https://github.com/ethernick/statamic-activitypub-core). Free for local development and non-production testing under our [Commercial Source-Available License](https://github.com/ethernick/statamic-activitypub-places/src/branch/main/LICENSE.md). Available for feedback ahead of official Marketplace publication.
 
 Add rich geographic context, interactive OpenStreetMap location discovery, and federated `Arrive` check-ins to your Statamic site. **ActivityPub Places** extends [`statamic-activitypub-core`](https://github.com/ethernick/statamic-activitypub-core) to seamlessly publish check-ins and location-tagged posts to Mastodon, Pixelfed, and the broader Fediverse.
 
