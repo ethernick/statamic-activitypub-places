@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ethernick\ActivityPubPlaces\Services;
 
 use Illuminate\Support\Facades\Http;
+use Statamic\Facades\Addon;
 use Statamic\Facades\File;
 use Statamic\Facades\YAML;
 use Ethernick\ActivityPubCore\Services\ActivityPubUtils;
@@ -22,11 +23,36 @@ class NominatimService
     protected function loadSettings(): void
     {
         $path = ActivityPubUtils::settingsPath();
+        $customAgent = null;
         if (File::exists($path)) {
             $settings = YAML::parse(File::get($path));
-            $this->userAgent = $settings['nominatim_user_agent'] ?? null;
+            $customAgent = $settings['nominatim_user_agent'] ?? null;
             $this->baseUrl = $settings['nominatim_url'] ?? 'https://nominatim.openstreetmap.org';
         }
+
+        $this->userAgent = $this->resolveUserAgent($customAgent);
+    }
+
+    /**
+     * Resolve a dynamic, OSM-compliant User-Agent header:
+     * AppName/Version (+SiteURL)
+     */
+    public function resolveUserAgent(?string $customAgent = null): string
+    {
+        if (!empty($customAgent)) {
+            return trim($customAgent);
+        }
+
+        $version = Addon::get('ethernick/statamic-activitypub-places')?->version() ?? '0.1.0';
+        $statamicVersion = class_exists(\Statamic\Statamic::class) ? \Statamic\Statamic::version() : (config('statamic.system.version') ?? '5.x');
+        $siteUrl = config('app.url') ?? 'https://localhost';
+
+        return "ethernick/statamic-activitypub-places/{$version} Statamic/{$statamicVersion} (+{$siteUrl})";
+    }
+
+    public function getUserAgent(): string
+    {
+        return $this->userAgent ?? $this->resolveUserAgent();
     }
 
     /**

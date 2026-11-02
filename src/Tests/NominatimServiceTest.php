@@ -57,17 +57,19 @@ class NominatimServiceTest extends PlacesTestCase
         $this->assertEquals('Paris, France', $response['results'][0]['display_name']);
     }
 
-    public function test_search_blocks_without_user_agent()
+    public function test_search_uses_dynamic_user_agent_when_not_configured()
     {
-        // Clear User-Agent
+        // Clear custom User-Agent from settings
         File::put(ActivityPubUtils::settingsPath(), YAML::dump([]));
         $service = new NominatimService();
 
-        $response = $service->search('Paris');
+        Http::fake();
+        $service->search('Paris');
 
-        $this->assertArrayHasKey('error', $response);
-        $this->assertStringContainsString('User-Agent not configured', $response['error']);
-        Http::assertNothingSent();
+        Http::assertSent(function ($request) {
+            return str_contains($request->header('User-Agent')[0], 'ethernick/statamic-activitypub-places/')
+                && str_contains($request->header('User-Agent')[0], 'Statamic/');
+        });
     }
 
     public function test_details_fetches_correct_osm_id()

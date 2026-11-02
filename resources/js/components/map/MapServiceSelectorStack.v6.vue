@@ -1,15 +1,15 @@
 <template>
-    <div v-if="open" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+    <div v-if="open" class="fixed inset-0 z-[100050] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/40" @click="$emit('close')"></div>
         <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 dark:border-gray-800">
             <div class="p-6">
-                <h3 class="text-lg font-bold mb-1">Open in Maps</h3>
-                <p class="text-sm text-gray-500 mb-6 truncate" :title="place.address">{{ place.osm_name || place.title }}</p>
+                <h3 class="text-lg font-bold mb-1 text-gray-900 dark:text-white">Open in Maps</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 truncate" :title="place.address">{{ place.osm_name || place.title }}</p>
                 
                 <div class="grid gap-2">
                     <button v-for="service in services" :key="service.name" 
                         @click="openMap(service)"
-                        class="relative flex items-center gap-4 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all group text-left w-full"
+                        class="relative flex items-center gap-4 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all group text-left w-full cursor-pointer"
                     >
                         <div class="w-10 h-10 rounded shadow-inner flex items-center justify-center bg-gray-50 dark:bg-gray-900 overflow-hidden">
                             <div v-html="service.iconSvg" class="w-6 h-6 flex items-center justify-center" :style="{ color: service.color }"></div>
@@ -22,7 +22,7 @@
                     </button>
                 </div>
             </div>
-            <div class="p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-800 flex justify-end">
+            <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-end">
                 <button @click="$emit('close')" class="relative inline-flex items-center justify-center whitespace-nowrap font-medium antialiased cursor-pointer no-underline bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 shadow-sm px-4 h-9 text-xs rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Cancel</button>
             </div>
         </div>
@@ -65,6 +65,16 @@ export default {
                     url: (p) => getOsmUrl(p)
                 }
             ]
+        }
+    },
+    mounted() {
+        if (this.$el) {
+            document.body.appendChild(this.$el);
+        }
+    },
+    beforeUnmount() {
+        if (this.$el && this.$el.parentNode) {
+            this.$el.parentNode.removeChild(this.$el);
         }
     },
     methods: {

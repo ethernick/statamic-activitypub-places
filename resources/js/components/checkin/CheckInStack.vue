@@ -10,6 +10,7 @@
                 <p class="text-xs text-gray-500 mb-6">Search for a place to check-in. You can search existing places or find new ones on OpenStreetMap.</p>
                 <location-search 
                     :search-url="findUrl"
+                    @change="provisionalLocation = $event"
                     @selected="handleSelected" 
                 />
             </div>
@@ -17,25 +18,33 @@
             <!-- Phase 2: Check-in Details -->
             <transition name="slide-up">
                 <div v-if="selected" class="mt-4 space-y-6">
-                    <!-- Location Brief -->
-                    <div class="p-4 loc-brief-box rounded-xl border">
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </div>
+                    <!-- Location Summary (Click to change location) -->
+                    <div 
+                        @click="changeLocation" 
+                        class="group cursor-pointer py-1.5 -mx-1 px-1 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-800/60 transition-colors"
+                        title="Click to change location"
+                    >
+                        <div class="flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-gray-400 group-hover:text-primary shrink-0 mt-0.5 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
                             <div class="flex-1 min-w-0">
-                                <div class="font-bold truncate loc-name">
-                                    {{ selected.name }}
-                                    <span v-if="selected.is_internal" class="ml-1 text-[10px] internal-tag px-1 py-0.5 rounded uppercase tracking-tighter">Internal</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">
+                                        {{ selected.name }}
+                                    </span>
+                                    <span v-if="selected.is_internal" class="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded font-mono uppercase tracking-wider">Internal</span>
+                                    <button type="button" @click.stop="changeLocation" class="text-gray-400 hover:text-gray-900 dark:hover:text-white group-hover:text-primary transition-colors ml-auto p-0.5 shrink-0" title="Change Location">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <div class="text-[10px] loc-address truncate">{{ selected.display_name || selected.address }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed break-words">
+                                    {{ selected.display_name || selected.address }}
+                                </div>
                             </div>
-                            <button @click="selected = null" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 shadow-sm px-2 text-[10px] h-6 rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Change</button>
-                        </div>
-
-                        <!-- Map Preview (display only, server handles image generation) -->
-                        <div class="h-48 w-full rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-inner">
-                            <div ref="mapPreviewContainer" class="h-full w-full"></div>
                         </div>
                     </div>
 
@@ -79,7 +88,24 @@
 
         <template #footer-end>
             <button @click="handleClosed" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 shadow-sm px-4 h-10 text-sm rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700">Cancel</button>
-            <button @click="save" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-linear-to-b from-primary/90 to-primary hover:bg-primary-hover text-white disabled:opacity-60 disabled:text-white dark:disabled:text-white border border-primary-border shadow-ui-md inset-shadow-2xs inset-shadow-white/25 dark:inset-shadow-black/20 disabled:inset-shadow-none dark:disabled:inset-shadow-none [&_svg]:text-white [&_svg]:opacity-60 px-4 h-10 text-sm gap-2 rounded-lg ml-2" :disabled="!selected || saving">
+
+            <!-- Phase 1 Action: Confirm Location -->
+            <button 
+                v-if="!selected"
+                @click="confirmLocation" 
+                class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-linear-to-b from-primary/90 to-primary hover:bg-primary-hover text-white disabled:opacity-60 disabled:text-white dark:disabled:text-white border border-primary-border shadow-ui-md inset-shadow-2xs inset-shadow-white/25 dark:inset-shadow-black/20 disabled:inset-shadow-none dark:disabled:inset-shadow-none [&_svg]:text-white [&_svg]:opacity-60 px-4 h-10 text-sm gap-2 rounded-lg ml-2" 
+                :disabled="!provisionalLocation"
+            >
+                Confirm Location
+            </button>
+
+            <!-- Phase 2 Action: Post Check-In -->
+            <button 
+                v-else
+                @click="save" 
+                class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-linear-to-b from-primary/90 to-primary hover:bg-primary-hover text-white disabled:opacity-60 disabled:text-white dark:disabled:text-white border border-primary-border shadow-ui-md inset-shadow-2xs inset-shadow-white/25 dark:inset-shadow-black/20 disabled:inset-shadow-none dark:disabled:inset-shadow-none [&_svg]:text-white [&_svg]:opacity-60 px-4 h-10 text-sm gap-2 rounded-lg ml-2" 
+                :disabled="saving"
+            >
                 <span v-if="saving" class="loading loading-xs mr-2"></span>
                 Post Check-In
             </button>
@@ -102,6 +128,7 @@ export default {
     data() {
         return {
             selected: null,
+            provisionalLocation: null,
             saving: false,
             actors: [],
             tagsInput: '',
@@ -145,7 +172,15 @@ export default {
                 });
         },
         handleSelected(result) {
+            this.provisionalLocation = result;
             this.selected = result;
+        },
+        confirmLocation() {
+            if (!this.provisionalLocation) return;
+            this.selected = this.provisionalLocation;
+        },
+        changeLocation() {
+            this.selected = null;
         },
         save() {
             if (this.saving || !this.selected) return;
@@ -208,6 +243,7 @@ export default {
         },
         reset() {
             this.selected = null;
+            this.provisionalLocation = null;
             this.form.content = '';
             this.tagsInput = '';
         }

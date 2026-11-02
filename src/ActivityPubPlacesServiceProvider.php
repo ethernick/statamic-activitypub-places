@@ -47,7 +47,8 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
                 ['places'],
                 PlaceStoreHandler::class,
                 PlaceOutboxHandler::class,
-                PlaceInboxHandler::class
+                PlaceInboxHandler::class,
+                ['osm_name', 'latitude', 'longitude', 'address', 'osm_type', 'osm_id', 'location']
             );
 
             ActivityPubTypes::registerTransformHook(function ($entry, &$data) {
@@ -71,8 +72,7 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
                     return;
                 }
 
-                $apJson  = $entry->get('activitypub_json');
-                $payload = is_string($apJson) ? json_decode($apJson, true) : [];
+                $payload = \Ethernick\ActivityPubCore\Storage\ActivityPubPayload::for($entry)->toArray();
 
                 $lat  = $payload['location']['latitude'] ?? null;
                 $lon  = $payload['location']['longitude'] ?? null;
@@ -93,8 +93,7 @@ class ActivityPubPlacesServiceProvider extends AddonServiceProvider
                     return;
                 }
 
-                $apJson = $entry->get('activitypub_json');
-                $payload = is_string($apJson) ? json_decode($apJson, true) : [];
+                $payload = \Ethernick\ActivityPubCore\Storage\ActivityPubPayload::for($entry)->toArray();
 
                 if (($payload['type'] ?? '') !== 'Arrive') {
                     return;

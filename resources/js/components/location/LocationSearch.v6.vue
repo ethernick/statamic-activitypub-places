@@ -27,10 +27,44 @@
             {{ error }}
         </div>
 
-        <!-- Use Grid for more predictable sizing across CP contexts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Segmented View Toggle (Results vs Map Preview) -->
+        <div class="flex mb-3 p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-semibold">
+            <button 
+                type="button"
+                @click="mobileTab = 'list'"
+                :class="[
+                    'flex-1 py-1.5 px-3 rounded-md transition-all flex items-center justify-center gap-1.5',
+                    mobileTab === 'list' 
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs' 
+                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                ]"
+            >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                <span>Results {{ results.length > 0 ? `(${results.length})` : '' }}</span>
+            </button>
+            <button 
+                type="button"
+                @click="mobileTab = 'map'"
+                :class="[
+                    'flex-1 py-1.5 px-3 rounded-md transition-all flex items-center justify-center gap-1.5',
+                    mobileTab === 'map' 
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs' 
+                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                ]"
+            >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                <span>Map Preview</span>
+            </button>
+        </div>
+
+        <!-- Full-width Viewport for active tab -->
+        <div class="relative w-full">
             <!-- Results List -->
-            <div class="results-container loc-search-results relative flex flex-col" style="height: 400px; min-height: 400px;">
+            <div 
+                v-show="mobileTab === 'list'"
+                class="results-container loc-search-results relative flex flex-col w-full"
+                style="height: 400px; min-height: 400px;"
+            >
                 <div class="flex-1 overflow-y-auto">
                     <div v-if="loading" class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 z-10 flex flex-col items-center justify-center p-8 text-center text-gray-500">
                         <span class="loading loading-sm mb-2"></span>
@@ -62,20 +96,14 @@
                     </ul>
                 </div>
                 
-                <!-- Explicit selected bar outside the map but tied to the layout -->
-                <div v-if="selectedResult" class="p-3 loc-selected-bar border-t flex justify-between items-center transition-all duration-300">
-                    <div class="flex-1 min-w-0 mr-3">
-                        <div class="text-[9px] text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest leading-none mb-1">Selected Location</div>
-                        <div class="text-xs font-bold truncate">{{ selectedResult.name || selectedResult.display_name.split(',')[0] }}</div>
-                    </div>
-                    <button @click="confirmSelection" class="relative inline-flex items-center justify-center whitespace-nowrap shrink-0 font-medium antialiased cursor-pointer no-underline disabled:[&_svg]:opacity-30 disabled:cursor-not-allowed [&_svg]:shrink-0 dark:[&_svg]:text-white bg-linear-to-b from-primary/90 to-primary hover:bg-primary-hover text-white disabled:opacity-60 disabled:text-white dark:disabled:text-white border border-primary-border shadow-ui-md inset-shadow-2xs inset-shadow-white/25 disabled:inset-shadow-none dark:disabled:inset-shadow-none [&_svg]:text-white [&_svg]:opacity-60 px-3 h-8 text-sm gap-2 rounded-lg">
-                        Confirm
-                    </button>
-                </div>
             </div>
 
             <!-- Map Preview -->
-            <div class="map-preview-container loc-map-container relative rounded border overflow-hidden flex flex-col" style="height: 400px; min-height: 400px;">
+            <div 
+                v-show="mobileTab === 'map'"
+                class="map-preview-container loc-map-container relative rounded border overflow-hidden flex flex-col w-full"
+                style="height: 400px; min-height: 400px;"
+            >
                 <div ref="mapContainer" class="flex-1 z-0 bg-[#f8f9fa] dark:bg-[#111111]"></div>
                 
                 <!-- Map Overlay Placeholder -->
@@ -117,10 +145,20 @@ export default {
             hasSearched: false,
             selectedResult: null,
             error: null,
+            mobileTab: 'list', // 'list' | 'map'
             // Non-reactive storage for map objects
             // map: null,
             // marker: null,
             // geometryLayer: null,
+        }
+    },
+    watch: {
+        mobileTab(tab) {
+            if (tab === 'map') {
+                this.$nextTick(() => {
+                    setTimeout(() => this.invalidateSize(), 100);
+                });
+            }
         }
     },
     mounted() {
@@ -283,6 +321,7 @@ export default {
         },
         selectResult(result, shouldZoom = true) {
             this.selectedResult = result;
+            this.$emit('change', result);
             const lat = parseFloat(result.lat);
             const lon = parseFloat(result.lon);
             

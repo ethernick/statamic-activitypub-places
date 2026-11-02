@@ -12,10 +12,12 @@ vi.mock('leaflet', () => {
         addLayer: vi.fn(),
         removeLayer: vi.fn(),
         fitBounds: vi.fn(),
+        on: vi.fn(),
         tileLayer: vi.fn().mockReturnValue({
             addTo: vi.fn()
         })
     };
+    mockMap.setView.mockReturnValue(mockMap);
 
     return {
         default: {
@@ -37,6 +39,13 @@ vi.mock('leaflet', () => {
                     getNorthEast: vi.fn(),
                     getSouthWest: vi.fn()
                 })
+            }),
+            layerGroup: vi.fn().mockReturnValue({
+                addTo: vi.fn().mockReturnThis(),
+                clearLayers: vi.fn(),
+                addLayer: vi.fn(),
+                removeLayer: vi.fn(),
+                eachLayer: vi.fn()
             }),
             Icon: {
                 Default: {
